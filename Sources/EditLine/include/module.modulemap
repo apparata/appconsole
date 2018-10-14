@@ -1,0 +1,5 @@
+module EditLine {
+    header "editline.h"
+    link "edit"
+    export *
+}
