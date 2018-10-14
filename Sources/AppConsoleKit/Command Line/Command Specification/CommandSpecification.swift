@@ -4,6 +4,129 @@
 
 import Foundation
 
+public struct AppArgument {
+    public let type: ArgumentDataType
+    public let value: ArgumentValue
+    
+    public init(_ parsedValue: Bool) {
+        type = .bool
+        value = .bool(parsedValue)
+    }
+    
+    public init(_ parsedValue: Int) {
+        type = .int
+        value = .int(parsedValue)
+    }
+    
+    public init(_ parsedValue: Double) {
+        type = .double
+        value = .double(parsedValue)
+    }
+    
+    public init(_ parsedValue: String) {
+        type = .string
+        value = .string(parsedValue)
+    }
+    
+    public init(_ parsedValue: Date) {
+        type = .date
+        value = .date(parsedValue)
+    }
+    
+    public init(_ parsedValue: Data) {
+        type = .file
+        value = .file(parsedValue)
+    }
+    
+}
+
+public struct AppCommand {
+    
+    public typealias CommandName = String
+    public typealias ArgumentName = String
+    
+    public let version: Int
+    public let commands: [CommandName]
+    public let arguments: [ArgumentName: AppArgument]
+    
+    public init(commands: [CommandName], arguments: [ArgumentName: AppArgument]) {
+        version = 1
+        self.commands = commands
+        self.arguments = arguments
+    }
+}
+
+extension AppCommand: Codable {
+    
+    enum CodingKeys: String, CodingKey {
+        case version
+        case commands
+        case arguments
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decode(Int.self, forKey: .version)
+        commands = try container.decode([CommandName].self, forKey: .commands)
+        arguments = try container.decode([ArgumentName: AppArgument].self, forKey: .arguments)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(version, forKey: .version)
+        try container.encode(commands, forKey: .commands)
+        try container.encode(arguments, forKey: .arguments)
+    }
+}
+
+extension AppArgument: Codable {
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(ArgumentDataType.self, forKey: .type)
+        switch type {
+        case .bool:
+            value = .bool(try container.decode(Bool.self, forKey: .value))
+        case .int:
+            value = .int(try container.decode(Int.self, forKey: .value))
+        case .double:
+            value = .double(try container.decode(Double.self, forKey: .value))
+        case .string:
+            value = .string(try container.decode(String.self, forKey: .value))
+        case .date:
+            value = .date(try container.decode(Date.self, forKey: .value))
+        case .file:
+            let data = try container.decode(Data.self, forKey: .value)
+            value = .file(data)
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        switch value {
+        case .bool(let value):
+            try container.encode(value, forKey: .value)
+        case .int(let value):
+            try container.encode(value, forKey: .value)
+        case .double(let value):
+            try container.encode(value, forKey: .value)
+        case .string(let value):
+            try container.encode(value, forKey: .value)
+        case .date(let value):
+            try container.encode(value, forKey: .value)
+        case .file(let value):
+            try container.encode(value, forKey: .value)
+        }
+    }
+}
+
+
 // ----------------------------------------------------------------------------
 // MARK: - Argument
 // ----------------------------------------------------------------------------

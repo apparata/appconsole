@@ -3,8 +3,11 @@ import Foundation
 
 public class Execution {
     
+    static var dispatchSourceSignal: DispatchSourceSignal?
+    
     /// Starts the main run loop.
     public static func runUntilTerminated(interruptHandler: (() -> Void)? = nil) {
+        //Execution.dispatchSourceSignal = installInterruptSignalHandler(handler: interruptHandler)
         RunLoop.main.run()
     }
     
