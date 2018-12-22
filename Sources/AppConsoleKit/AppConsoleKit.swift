@@ -30,6 +30,11 @@ public class AppConsole: NSObject {
         messageClient.connect()
     }
     
+    public func stop() {
+        lineEditor?.destroy()
+        lineEditor = nil
+    }
+    
     private func printCommandList() {
         Console.print("\nThese commands are available:\n")
         let maxCommandLength = commands.reduce(0) { return max($0, $1.name.count) }

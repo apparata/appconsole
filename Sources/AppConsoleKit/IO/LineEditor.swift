@@ -26,4 +26,9 @@ class LineEditor {
     func reset() {
         lineEditorReset()
     }
+    
+    func destroy() {
+        lineEditorReset()
+        lineEditorDestroy()
+    }
 }

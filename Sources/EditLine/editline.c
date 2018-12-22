@@ -28,6 +28,7 @@ void lineEditorDestroy(void) {
     }
     
     if (editLine != NULL) {
+        el_reset(editLine);
         el_end(editLine);
         editLine = NULL;
     }

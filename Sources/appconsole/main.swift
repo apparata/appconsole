@@ -30,5 +30,7 @@ let appConsole = AppConsole(instanceName: appInstanceName, verbose: verbose)
 
 appConsole.start()
 
-Execution.runUntilTerminated()
+Execution.runUntilTerminated(interruptHandler: {
+    appConsole.stop()
+})
 
