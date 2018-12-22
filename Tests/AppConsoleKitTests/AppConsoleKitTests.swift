@@ -9,7 +9,7 @@ final class AppConsoleKitTests: XCTestCase {
         dump(parsedCommand)
     }
     
-    private func evaluateCommandLine(_ commandLine: String) -> ParsedCommand {
+    private func evaluateCommandLine(_ commandLine: String) -> AppCommand {
         let commandLineProcessor = CommandLineProcessor()
         let commands = makeCommands()
         do {
