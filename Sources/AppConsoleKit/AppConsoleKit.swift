@@ -93,7 +93,7 @@ extension AppConsole: MessageClientDelegate {
 
      <bold><blue><underline>Device Info</underline></blue></bold>
       Name: \(info.device.name)
-     Model: \(info.device.model) (\(info.device.identifier))
+     Model: \(info.device.model) (\(DeviceType(identifier: info.device.identifier)))
  Simulator: \(info.device.isSimulator ? "Yes" : "No")
    Battery: \(max(0, info.device.batteryLevel * 100.0))
 
@@ -107,7 +107,6 @@ extension AppConsole: MessageClientDelegate {
       Name: \(info.app.name)
  Bundle ID: \(info.app.bundleID)
    Version: \(info.app.version) (\(info.app.buildVersion))
-TestFlight: \(info.app.isTestFlight)
 """)
             
             sendListCommands(client: client)

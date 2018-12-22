@@ -88,7 +88,6 @@ public struct AppConsoleInfo: Codable {
         public let bundleID: String
         public let version: String
         public let buildVersion: String
-        public let isTestFlight: Bool
         
         #if canImport(UIKit)
         init() {
@@ -97,7 +96,6 @@ public struct AppConsoleInfo: Codable {
             bundleID = info["CFBundleIdentifier"] as! String
             version = info["CFBundleShortVersionString"] as! String
             buildVersion = info["CFBundleVersion"] as! String
-            isTestFlight = Bundle.main.appStoreReceiptURL?.path.contains("sandboxReceipt") == true
         }
         #endif
     }
