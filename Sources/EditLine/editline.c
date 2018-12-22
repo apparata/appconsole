@@ -15,7 +15,6 @@ void lineEditorCreate(void) {
     editLine = el_init("command", stdin, stdout, stderr);
     el_set(editLine, EL_PROMPT, &prompt);
     el_set(editLine, EL_EDITOR, "emacs");
-    el_set(editLine, EL_SIGNAL, SIGINT);
 
     historyInstance = history_init();
     history(historyInstance, &historyEvent, H_SETSIZE, 800);

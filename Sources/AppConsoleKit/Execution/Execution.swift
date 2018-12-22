@@ -7,7 +7,7 @@ public class Execution {
     
     /// Starts the main run loop.
     public static func runUntilTerminated(interruptHandler: (() -> Void)? = nil) {
-        //Execution.dispatchSourceSignal = installInterruptSignalHandler(handler: interruptHandler)
+        Execution.dispatchSourceSignal = installInterruptSignalHandler(handler: interruptHandler)
         RunLoop.main.run()
     }
     
