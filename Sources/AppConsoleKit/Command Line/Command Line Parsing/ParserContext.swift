@@ -38,7 +38,7 @@ class ParserContext {
     }
         
     func addFlag(_ flag: Flag) throws {
-        if let index = remainingFlags.index(where: {
+        if let index = remainingFlags.firstIndex(where: {
             flag.name == $0.name
         }) {
             remainingFlags.remove(at: index)
@@ -50,7 +50,7 @@ class ParserContext {
     }
     
     func addOption(_ option: Option, stringValue: String) throws {
-        if let index = remainingOptions.index(where: {
+        if let index = remainingOptions.firstIndex(where: {
             option.name == $0.name
         }) {
             remainingOptions.remove(at: index)
@@ -66,7 +66,7 @@ class ParserContext {
     }
     
     func addInput(_ input: Input, stringValue: String) throws {
-        if let index = remainingInputs.index(where: {
+        if let index = remainingInputs.firstIndex(where: {
             input.name == $0.name
         }) {
             remainingInputs.remove(at: index)

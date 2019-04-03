@@ -1,4 +1,0 @@
-// The following variables are set in the generated Xcode project.
-MACOSX_DEPLOYMENT_TARGET=10.14
-SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG
-OTHER_LDFLAGS=-ledit

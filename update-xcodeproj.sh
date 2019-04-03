@@ -4,7 +4,7 @@
 swift package update
 
 # Generate a new Xcode project file
-swift package generate-xcodeproj --xcconfig-overrides Package.xcconfig
+swift package generate-xcodeproj
 
 # Open the newly generated Xcode project file
 open appconsole.xcodeproj

@@ -51,7 +51,7 @@ public final class Terminal {
 
 public extension Terminal {
     
-    public static func type(output: OutputHandle) -> TerminalType {
+    static func type(output: OutputHandle) -> TerminalType {
         if let wrapper = output as? WrapsFileHandle {
             return type(fileHandle: wrapper.fileHandle)
         } else {

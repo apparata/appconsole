@@ -184,7 +184,7 @@ extension AppConsole: MessageClientDelegate {
 
 public extension MessageClient {
     
-    public func sendMessage<T: Encodable>(_ type: AppConsoleMessageType,
+    func sendMessage<T: Encodable>(_ type: AppConsoleMessageType,
                                           _ payload: T,
                                           completion: ((SendMessageResult) -> Void)? = nil) {
         let encoder = JSONEncoder()
@@ -205,7 +205,7 @@ public extension MessageClient {
         }
     }
     
-    public func sendMessage(_ type: AppConsoleMessageType, completion: ((SendMessageResult) -> Void)? = nil) {
+    func sendMessage(_ type: AppConsoleMessageType, completion: ((SendMessageResult) -> Void)? = nil) {
         let encoder = JSONEncoder()
         do {
             let metadata = try encoder.encode(AppConsoleMessageMetadata(type))

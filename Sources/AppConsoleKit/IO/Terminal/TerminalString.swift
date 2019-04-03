@@ -25,7 +25,7 @@ public extension String {
     /// - Parameter reset: Reset the style at the start and end of string.
     /// - Returns: Returns styled string
     ///
-    public func forTerminal(type: TerminalType, reset: Bool = true) -> String {
+    func forTerminal(type: TerminalType, reset: Bool = true) -> String {
         return TerminalString(self).forTerminal(type: type, reset: reset)
     }
     
@@ -46,12 +46,12 @@ public extension String {
     /// - Parameter reset: Reset the style at the start and end of string.
     /// - Returns: Returns styled string
     ///
-    public func forConsole(reset: Bool = true) -> String {
+    func forConsole(reset: Bool = true) -> String {
         return TerminalString(self).forTerminal(type: Console.terminalType, reset: reset)
     }
     
     /// Escapes tags so the string can be safely inserted in a terminal string.
-    public func escapedTags() -> String {
+    func escapedTags() -> String {
         return self
                 .replacingOccurrences(of: "<", with: "&lt;")
                 .replacingOccurrences(of: ">", with: "&gt;")
