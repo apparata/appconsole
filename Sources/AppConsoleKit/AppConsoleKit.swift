@@ -79,6 +79,9 @@ extension AppConsole: MessageClientDelegate {
         case .screenshot:
             handleScreenshot(data, from: client)
             
+        case .file:
+            handleFile(data, from: client)
+            
         default:
             break
         }
@@ -131,6 +134,13 @@ extension AppConsole: MessageClientDelegate {
     func handleScreenshot(_ data: Data, from client: MessageClient) {
         let url = URL(fileURLWithPath: "/tmp/appconsole-screenshot.png")
         try? data.write(to: url, options: .atomic)
+        NSWorkspace.shared.open(url)
+    }
+    
+    func handleFile(_ data: Data, from client: MessageClient) {
+        let fileInfo = try! JSONDecoder().decode(RemoteFileInfo.self, from: data)
+        let url = URL(fileURLWithPath: "/tmp/\(fileInfo.filename)")
+        try? fileInfo.filedata.write(to: url, options: .atomic)
         NSWorkspace.shared.open(url)
     }
     

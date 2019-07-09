@@ -14,6 +14,7 @@ public enum AppConsoleMessageType: String, Codable {
     case generalInfo
     case commandsSpecification
     case consoleOutput
+    case file
     case screenshot
     case readyForCommand
 }
@@ -111,4 +112,9 @@ public struct AppConsoleInfo: Codable {
         app = AppInfo()
     }
     #endif    
+}
+
+public struct RemoteFileInfo: Codable {
+    let filename: String
+    let filedata: Data
 }
