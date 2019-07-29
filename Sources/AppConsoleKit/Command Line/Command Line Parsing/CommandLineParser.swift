@@ -15,7 +15,7 @@ public final class CommandLineParser {
     /// Parse command line arguments.
     ///
     /// - parameter arguments: Arguments, without the executable argument.
-    public func parse(_ arguments: [String]) throws -> AppCommand {
+    public func parse(_ arguments: [String]) throws -> RunCommandRequest {
         
         if arguments.isEmpty {
             if command.hasSubcommands || command.argumentCount > 1 {
@@ -31,7 +31,7 @@ public final class CommandLineParser {
 
             let commands = context.commands.map { $0.name }
 
-            var arguments: [String: AppArgument] = [:]
+            var arguments: [String: ArgumentValue] = [:]
             for (argument, value) in context.arguments {
                 arguments[argument.name] = value
                 if argument.name == "help" {
@@ -43,7 +43,7 @@ public final class CommandLineParser {
                 throw CommandLineError.usageRequested(self.command, helpCommand)
             }
             
-            let command = AppCommand(commands: commands, arguments: arguments)
+            let command = RunCommandRequest(commands: commands, arguments: arguments)
             
             return command
         case .failure(let error):

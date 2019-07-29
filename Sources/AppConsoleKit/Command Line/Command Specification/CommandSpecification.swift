@@ -4,132 +4,29 @@
 
 import Foundation
 
-public struct AppArgument {
-    public let type: ArgumentDataType
-    public let value: ArgumentValue
-    
-    public init(_ parsedValue: Bool) {
-        type = .bool
-        value = .bool(parsedValue)
-    }
-    
-    public init(_ parsedValue: Int) {
-        type = .int
-        value = .int(parsedValue)
-    }
-    
-    public init(_ parsedValue: Double) {
-        type = .double
-        value = .double(parsedValue)
-    }
-    
-    public init(_ parsedValue: String) {
-        type = .string
-        value = .string(parsedValue)
-    }
-    
-    public init(_ parsedValue: Date) {
-        type = .date
-        value = .date(parsedValue)
-    }
-    
-    public init(_ parsedValue: Data) {
-        type = .file
-        value = .file(parsedValue)
-    }
-    
+public enum CommandSpecificationError: Error {
+    case incorrectCommandSpecificationVersion
 }
 
-public struct AppCommand {
+public struct RunCommandRequest {
     
     public typealias CommandName = String
     public typealias ArgumentName = String
     
+    public static let currentVersion = 1
+    
     public let version: Int
     public let commands: [CommandName]
-    public let arguments: [ArgumentName: AppArgument]
+    public let arguments: [ArgumentName: ArgumentValue]
     
-    public init(commands: [CommandName], arguments: [ArgumentName: AppArgument]) {
-        version = 1
+    public init(commands: [CommandName], arguments: [ArgumentName: ArgumentValue]) {
+        version = RunCommandRequest.currentVersion
         self.commands = commands
         self.arguments = arguments
     }
 }
 
-extension AppCommand: Codable {
-    
-    enum CodingKeys: String, CodingKey {
-        case version
-        case commands
-        case arguments
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        version = try container.decode(Int.self, forKey: .version)
-        commands = try container.decode([CommandName].self, forKey: .commands)
-        arguments = try container.decode([ArgumentName: AppArgument].self, forKey: .arguments)
-    }
-    
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(version, forKey: .version)
-        try container.encode(commands, forKey: .commands)
-        try container.encode(arguments, forKey: .arguments)
-    }
-}
-
-extension AppArgument: Codable {
-    
-    enum CodingKeys: String, CodingKey {
-        case type
-        case value
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        type = try container.decode(ArgumentDataType.self, forKey: .type)
-        switch type {
-        case .bool:
-            value = .bool(try container.decode(Bool.self, forKey: .value))
-        case .int:
-            value = .int(try container.decode(Int.self, forKey: .value))
-        case .double:
-            value = .double(try container.decode(Double.self, forKey: .value))
-        case .string:
-            value = .string(try container.decode(String.self, forKey: .value))
-        case .date:
-            value = .date(try container.decode(Date.self, forKey: .value))
-        case .file:
-            let data = try container.decode(Data.self, forKey: .value)
-            value = .file(data)
-        }
-    }
-    
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(type, forKey: .type)
-        switch value {
-        case .bool(let value):
-            try container.encode(value, forKey: .value)
-        case .int(let value):
-            try container.encode(value, forKey: .value)
-        case .double(let value):
-            try container.encode(value, forKey: .value)
-        case .string(let value):
-            try container.encode(value, forKey: .value)
-        case .date(let value):
-            try container.encode(value, forKey: .value)
-        case .file(let value):
-            try container.encode(value, forKey: .value)
-        }
-    }
-}
-
-
-// ----------------------------------------------------------------------------
 // MARK: - Argument
-// ----------------------------------------------------------------------------
 
 public enum ArgumentDataType: String, Codable {
     case bool
@@ -146,7 +43,7 @@ public enum ArgumentValue {
     case double(Double)
     case string(String)
     case date(Date)
-    case file(Data)
+    case file(name: String, Data)
 }
 
 public protocol Argument {
@@ -155,9 +52,7 @@ public protocol Argument {
     var description: String { get }
 }
 
-// ----------------------------------------------------------------------------
 // MARK: - Flag
-// ----------------------------------------------------------------------------
 
 /// A flag is an argument, which when present, represents `true`.
 /// A flag that is not present, represents `false`.
@@ -173,7 +68,7 @@ public protocol Argument {
 /// }
 /// ```
 ///
-public struct Flag: Argument {
+public struct Flag: Argument, Codable {
     public let argumentType: String
     public let name: String
     public let short: String
@@ -187,35 +82,7 @@ public struct Flag: Argument {
     }
 }
 
-extension Flag: Codable {
-    
-    enum CodingKeys: String, CodingKey {
-        case argumentType
-        case name
-        case short
-        case description
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        argumentType = try container.decode(String.self, forKey: .argumentType)
-        name = try container.decode(String.self, forKey: .name)
-        short = try container.decode(String.self, forKey: .short)
-        description = try container.decode(String.self, forKey: .description)
-    }
-    
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(argumentType, forKey: .argumentType)
-        try container.encode(name, forKey: .name)
-        try container.encode(short, forKey: .short)
-        try container.encode(description, forKey: .description)
-    }
-}
-
-// ----------------------------------------------------------------------------
 // MARK: - Option
-// ----------------------------------------------------------------------------
 
 /// An option argument represents a named option and is used to pass a value
 /// to the command.
@@ -234,7 +101,7 @@ extension Flag: Codable {
 /// }
 /// ```
 ///
-public struct Option: Argument {
+public struct Option: Argument, Codable {
     public let argumentType: String
     public let name: String
     public let short: String
@@ -259,45 +126,7 @@ public struct Option: Argument {
     }
 }
 
-extension Option: Codable {
-    
-    enum CodingKeys: String, CodingKey {
-        case argumentType
-        case name
-        case short
-        case type
-        case isMultipleAllowed
-        case validationRegex
-        case description
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        argumentType = try container.decode(String.self, forKey: .argumentType)
-        name = try container.decode(String.self, forKey: .name)
-        short = try container.decode(String.self, forKey: .short)
-        type = try container.decode(ArgumentDataType.self, forKey: .type)
-        isMultipleAllowed = try container.decode(Bool.self, forKey: .isMultipleAllowed)
-        validationRegex = try container.decodeIfPresent(String.self, forKey: .validationRegex)
-        description = try container.decode(String.self, forKey: .description)
-    }
-    
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(argumentType, forKey: .argumentType)
-        try container.encode(name, forKey: .name)
-        try container.encode(short, forKey: .short)
-        try container.encode(type, forKey: .type)
-        try container.encode(isMultipleAllowed, forKey: .isMultipleAllowed)
-        try container.encodeIfPresent(validationRegex, forKey: .validationRegex)
-        try container.encode(description, forKey: .description)
-    }
-}
-
-
-// ----------------------------------------------------------------------------
 // MARK: - Input
-// ----------------------------------------------------------------------------
 
 /// An input argument is an argument that represents a file or similar.
 /// If it's the last argument, it could optionally be variadic.
@@ -315,7 +144,7 @@ extension Option: Codable {
 /// }
 /// ```
 ///
-public struct Input: Argument {
+public struct Input: Argument, Codable {
     public let argumentType: String
     public let name: String
     public let type: ArgumentDataType
@@ -337,44 +166,10 @@ public struct Input: Argument {
     }
 }
 
-extension Input: Codable {
-    
-    enum CodingKeys: String, CodingKey {
-        case argumentType
-        case name
-        case type
-        case isOptional
-        case validationRegex
-        case description
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        argumentType = try container.decode(String.self, forKey: .argumentType)
-        name = try container.decode(String.self, forKey: .name)
-        type = try container.decode(ArgumentDataType.self, forKey: .type)
-        isOptional = try container.decode(Bool.self, forKey: .isOptional)
-        validationRegex = try container.decodeIfPresent(String.self, forKey: .validationRegex)
-        description = try container.decode(String.self, forKey: .description)
-    }
-    
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(argumentType, forKey: .argumentType)
-        try container.encode(name, forKey: .name)
-        try container.encode(type, forKey: .type)
-        try container.encode(isOptional, forKey: .isOptional)
-        try container.encodeIfPresent(validationRegex, forKey: .validationRegex)
-        try container.encode(description, forKey: .description)
-    }
-}
-
-// ----------------------------------------------------------------------------
 // MARK: - Command
-// ----------------------------------------------------------------------------
 
 /// A command has either subcommands, or flags/options/inputs
-public struct Command {
+public struct Command: Codable {
     
     public enum Context {
         case subcommands([Command])
@@ -404,7 +199,7 @@ public struct Command {
                 description: String,
                 subcommands: [Command]) {
         self.name = name
-        let helpSubcommand = Command.createHelpSubcommand()
+        let helpSubcommand = Command.makeHelpSubcommand()
         let extendedSubcommands = [helpSubcommand] + subcommands
         context = .subcommands(extendedSubcommands)
         self.description = description
@@ -413,17 +208,17 @@ public struct Command {
     public init(name: String,
                 description: String,
                 isLastInputVariadic: Bool = false,
-                arguments: [Argument]) {
+                arguments: [Argument] = []) {
         self.name = name
         let flags = arguments.filter { $0 is Flag }.map { $0 as! Flag }
         let options = arguments.filter { $0 is Option }.map { $0 as! Option }
         let inputs = arguments.filter { $0 is Input }.map { $0 as! Input }
-        let helpAndFlags = [Command.createHelpFlag()] + flags
+        let helpAndFlags = [Command.makeHelpFlag()] + flags
         context = .arguments(helpAndFlags, options, inputs, isLastInputVariadic: isLastInputVariadic)
         self.description = description
     }
     
-    private static func createHelpSubcommand() -> Command {
+    private static func makeHelpSubcommand() -> Command {
         let arguments: [Argument] = [
             Input("subcommand", type: .string, isOptional: true, description: "Subcommand to display help text for.")
         ]
@@ -434,31 +229,106 @@ public struct Command {
         return subcommandDefinition
     }
     
-    private static func createHelpFlag() -> Flag {
+    private static func makeHelpFlag() -> Flag {
         return Flag("help", short: "h", description: "Show this help text.")
     }
 }
 
-extension Command: Codable {
+// MARK: - CommandsSpecification
+
+public struct CommandsSpecification {
+    
+    public static let currentVersion = 1
+    
+    public let version: Int
+    public let commands: [Command]
+    
+    public init(commands: [Command]) {
+        version = CommandsSpecification.currentVersion
+        self.commands = commands
+    }
+}
+
+// MARK: - Codable Extensions
+
+extension RunCommandRequest: Codable {
     
     enum CodingKeys: String, CodingKey {
-        case name
-        case description
-        case context
+        case version
+        case commands
+        case arguments
     }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        name = try container.decode(String.self, forKey: .name)
-        description = try container.decode(String.self, forKey: .description)
-        context = try container.decode(Context.self, forKey: .context)
+        version = try container.decode(Int.self, forKey: .version)
+        guard version == RunCommandRequest.currentVersion else {
+            throw CommandSpecificationError.incorrectCommandSpecificationVersion
+        }
+        commands = try container.decode([CommandName].self, forKey: .commands)
+        arguments = try container.decode([ArgumentName: ArgumentValue].self, forKey: .arguments)
     }
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(name, forKey: .name)
-        try container.encode(description, forKey: .description)
-        try container.encode(context, forKey: .context)
+        try container.encode(version, forKey: .version)
+        try container.encode(commands, forKey: .commands)
+        try container.encode(arguments, forKey: .arguments)
+    }
+}
+
+extension ArgumentValue: Codable {
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case value
+        case name
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(ArgumentDataType.self, forKey: .type)
+        switch type {
+        case .bool:
+            self = .bool(try container.decode(Bool.self, forKey: .value))
+        case .int:
+            self = .int(try container.decode(Int.self, forKey: .value))
+        case .double:
+            self = .double(try container.decode(Double.self, forKey: .value))
+        case .string:
+            self = .string(try container.decode(String.self, forKey: .value))
+        case .date:
+            self = .date(try container.decode(Date.self, forKey: .value))
+        case .file:
+            let data = try container.decode(Data.self, forKey: .value)
+            let name = try container.decode(String.self, forKey: .name)
+            self = .file(name: name, data)
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .bool(let value):
+            try container.encode(ArgumentDataType.bool, forKey: .type)
+            try container.encode(value, forKey: .value)
+        case .int(let value):
+            try container.encode(ArgumentDataType.int, forKey: .type)
+            try container.encode(value, forKey: .value)
+        case .double(let value):
+            try container.encode(ArgumentDataType.double, forKey: .type)
+            try container.encode(value, forKey: .value)
+        case .string(let value):
+            try container.encode(ArgumentDataType.string, forKey: .type)
+            try container.encode(value, forKey: .value)
+        case .date(let value):
+            try container.encode(ArgumentDataType.date, forKey: .type)
+            try container.encode(value, forKey: .value)
+        case .file(name: let name, let value):
+            try container.encode(ArgumentDataType.file, forKey: .type)
+            try container.encode(value, forKey: .value)
+            try container.encode(name, forKey: .name)
+        }
     }
 }
 
@@ -499,20 +369,6 @@ extension Command.Context: Codable {
     }
 }
 
-// ----------------------------------------------------------------------------
-// MARK: - CommandsSpecification
-// ----------------------------------------------------------------------------
-
-public struct CommandsSpecification {
-    public let version: Int
-    public let commands: [Command]
-    
-    public init(commands: [Command]) {
-        version = 1
-        self.commands = commands
-    }
-}
-
 extension CommandsSpecification: Codable {
     
     enum CodingKeys: String, CodingKey {
@@ -523,6 +379,9 @@ extension CommandsSpecification: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decode(Int.self, forKey: .version)
+        guard version == CommandsSpecification.currentVersion else {
+            throw CommandSpecificationError.incorrectCommandSpecificationVersion
+        }
         commands = try container.decode([Command].self, forKey: .commands)
     }
     
@@ -532,4 +391,3 @@ extension CommandsSpecification: Codable {
         try container.encode(commands, forKey: .commands)
     }
 }
-

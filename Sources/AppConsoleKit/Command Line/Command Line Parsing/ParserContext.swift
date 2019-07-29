@@ -4,7 +4,7 @@ import Foundation
 class ParserContext {
     var commandDefinition: Command
     var commands: [Command] = []
-    var arguments: [(Argument, AppArgument)] = []
+    var arguments: [(Argument, ArgumentValue)] = []
     
     private var remainingFlags: [Flag] = []
     private var remainingOptions: [Option] = []
@@ -46,7 +46,7 @@ class ParserContext {
             throw CommandLineError.unexpectedArgument(flag.name)
         }
         
-        arguments.append((flag, AppArgument(true)))
+        arguments.append((flag, .bool(true)))
     }
     
     func addOption(_ option: Option, stringValue: String) throws {
@@ -81,35 +81,35 @@ class ParserContext {
         arguments.append((input, parsedArgument))
     }
     
-    private func convertArgument(_ argument: Argument, stringValue: String, toValueOfType type: ArgumentDataType) throws -> AppArgument {
+    private func convertArgument(_ argument: Argument, stringValue: String, toValueOfType type: ArgumentDataType) throws -> ArgumentValue {
         switch type {
         case .bool:
             guard let value = Bool(stringValue) else {
                 throw CommandLineError.argumentValueNotConvertibleToType(argument, stringValue, type)
             }
-            return AppArgument(value)
+            return .bool(value)
         case .int:
             guard let value = Int(stringValue) else {
                 throw CommandLineError.argumentValueNotConvertibleToType(argument, stringValue, type)
             }
-            return AppArgument(value)
+            return .int(value)
         case .double:
             guard let value = Double(stringValue) else {
                 throw CommandLineError.argumentValueNotConvertibleToType(argument, stringValue, type)
             }
-            return AppArgument(value)
-        case .string: return AppArgument(stringValue)
+            return .double(value)
+        case .string: return .string(stringValue)
         case .date:
             guard let date = ISO8601DateFormatter().date(from: stringValue) else {
                 throw CommandLineError.argumentValueNotConvertibleToType(argument, stringValue, type)
             }
-            return AppArgument(date)
+            return .date(date)
         case .file:
             let url = URL(fileURLWithPath: stringValue)
             guard let data = try? Data(contentsOf: url) else {
                 throw CommandLineError.argumentValueNotConvertibleToType(argument, stringValue, type)
             }
-            return AppArgument(data)
+            return .file(name: url.lastPathComponent, data)
         }
     }
     

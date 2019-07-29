@@ -5,7 +5,7 @@ public class CommandLineProcessor {
     
     public init() { }
     
-    public func evaluate(_ commandLine: String, commands: [Command]) throws -> AppCommand {
+    public func evaluate(_ commandLine: String, commands: [Command]) throws -> RunCommandRequest {
         let tokenizer = CommandLineTokenizer()
         guard let arguments = tokenizer.tokenize(commandLine), arguments.count > 0 else {
             throw CommandLineError.failedToTokenizeCommandLine(commandLine)
@@ -14,7 +14,7 @@ public class CommandLineProcessor {
         return parsedCommand
     }
     
-    public func evaluate(arguments: [String], commands: [Command]) throws -> AppCommand {
+    public func evaluate(arguments: [String], commands: [Command]) throws -> RunCommandRequest {
         
         let commandName = arguments[0]
         let arguments = Array(arguments.dropFirst())
