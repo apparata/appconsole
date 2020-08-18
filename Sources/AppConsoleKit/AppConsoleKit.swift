@@ -95,7 +95,7 @@ extension AppConsole: MessageClientDelegate {
             Console.print("""
 
      <bold><blue><underline>Device Info</underline></blue></bold>
-      Name: \(info.device.name)
+      Name: \(info.device.name.replacingOccurrences(of: "&", with: "&amp;"))
      Model: \(info.device.model) (\(DeviceType(identifier: info.device.identifier)))
  Simulator: \(info.device.isSimulator ? "Yes" : "No")
    Battery: \(max(0, info.device.batteryLevel * 100.0))
@@ -107,7 +107,7 @@ extension AppConsole: MessageClientDelegate {
  Preferred: \(info.system.preferredLanguages.joined(separator: ", "))
                 
         <bold><blue><underline>App Info</underline></blue></bold>
-      Name: \(info.app.name)
+      Name: \(info.app.name.replacingOccurrences(of: "&", with: "&amp;"))
  Bundle ID: \(info.app.bundleID)
    Version: \(info.app.version) (\(info.app.buildVersion))
 """)
@@ -118,7 +118,7 @@ extension AppConsole: MessageClientDelegate {
     
     func handleCommandsSpecification(_ data: Data, from client: MessageClient) {
         let commandsSpecification = try! JSONDecoder().decode(CommandsSpecification.self, from: data)
-        commands = commandsSpecification.commands
+        commands = commandsSpecification.commands + [Self.makeHelpCommand()]
         Console.print("\nType 'help' to list available commands.")
     }
     
@@ -142,6 +142,17 @@ extension AppConsole: MessageClientDelegate {
         let url = URL(fileURLWithPath: "/tmp/\(fileInfo.filename)")
         try? fileInfo.filedata.write(to: url, options: .atomic)
         NSWorkspace.shared.open(url)
+    }
+    
+    private static func makeHelpCommand() -> Command {
+        let arguments: [Argument] = [
+            Input("command", type: .string, isOptional: true, description: "Command to display help text for.")
+        ]
+        
+        let commandDefinition = Command(name: "help",
+                                        description: "Use 'help &lt;command&gt;' to display help text for command.",
+                                        arguments: arguments)
+        return commandDefinition
     }
     
     private func sendListCommands(client: MessageClient) {

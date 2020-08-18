@@ -174,6 +174,13 @@ public struct Command: Codable {
     public enum Context {
         case subcommands([Command])
         case arguments([Flag], [Option], [Input], isLastInputVariadic: Bool)
+        
+        var subcommands: [Command] {
+            switch self {
+            case .subcommands(let subcommands): return subcommands
+            case .arguments: return []
+            }
+        }
     }
     
     public let name: String

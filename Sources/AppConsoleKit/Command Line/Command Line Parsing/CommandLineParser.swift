@@ -7,9 +7,11 @@ import Foundation
 public final class CommandLineParser {
     
     private let command: Command
+    private let allCommands: [Command]
     
-    public init(command: Command) {
+    public init(command: Command, allCommands: [Command]) {
         self.command = command
+        self.allCommands = allCommands
     }
         
     /// Parse command line arguments.
@@ -28,18 +30,35 @@ public final class CommandLineParser {
         switch resultingState {
         case .success(let context):
             var helpRequested: Bool = false
+            var helpCommand: Command = context.commands[0]
 
             let commands = context.commands.map { $0.name }
 
+            for (index, command) in context.commands.enumerated() {
+                if command.name == "help" {
+                    helpRequested = true
+                    if let (_, value) = context.arguments.first, case let .string(string) = value {
+                        if index == 0, let rootLevelCommand = allCommands.first(where: { $0.name == string }) {
+                            helpCommand = rootLevelCommand
+                        } else if let subcommand = helpCommand.context.subcommands.first(where: { $0.name == string }) {
+                            helpCommand = subcommand
+                        }
+                    }
+                } else {
+                    helpCommand = command
+                }
+            }
+            
             var arguments: [String: ArgumentValue] = [:]
             for (argument, value) in context.arguments {
                 arguments[argument.name] = value
                 if argument.name == "help" {
                     helpRequested = true
+                    helpCommand = context.commands.last ?? helpCommand
                 }
             }
             
-            if helpRequested, let helpCommand = context.commands.last {
+            if helpRequested {
                 throw CommandLineError.usageRequested(self.command, helpCommand)
             }
             
@@ -66,7 +85,7 @@ public final class CommandLineParser {
         var remainingInputs: [Input] = []
         
         switch currentCommand.context {
-        case .subcommands(_):
+        case .subcommands:
             remainingInputs = []
         case .arguments(_, _, let inputs, _):
             remainingInputs = inputs
@@ -108,7 +127,7 @@ public final class CommandLineParser {
                 case .parsedSubcommand(let parsedSubcommand):
                     currentCommand = parsedSubcommand
                     switch currentCommand.context {
-                    case .subcommands(_):
+                    case .subcommands:
                         remainingInputs = []
                     case .arguments(_, _, let inputs, _):
                         remainingInputs = inputs
@@ -137,7 +156,7 @@ public final class CommandLineParser {
                         stateMachine.fireEvent(.scannedUnexpectedArgument, argument)
                     }
                     
-                case .parsedFlag(_), .parsedOptionValue(_, _):
+                case .parsedFlag, .parsedOptionValue:
                     if isFlagOrOption(argument) {
                         if let flag = getFlag(correspondingTo: argument, command: currentCommand) {
                             // Special treatment of the -h / --help flag.
@@ -204,9 +223,15 @@ public final class CommandLineParser {
     
     private func getFlag(correspondingTo string: String, command: Command) -> Flag? {
         switch command.context {
-        case .subcommands(_):
+        case .subcommands:
+            if ["-h", "--help"].contains(string) {
+                return Flag("help", short: "h", description: "Show this help text.")
+            }
             return nil
         case .arguments(let flags, _, _, _):
+            if ["-h", "--help"].contains(string) {
+                return Flag("help", short: "h", description: "Show this help text.")
+            }
             let flag = flags.first(where: {
                 if "--\($0.name)" == string {
                     return true
@@ -222,7 +247,7 @@ public final class CommandLineParser {
     
     private func getOption(correspondingTo string: String, command: Command) -> Option? {
         switch command.context {
-        case .subcommands(_):
+        case .subcommands:
             return nil
         case .arguments(_, let options, _, _):
             let option = options.first(where: {
@@ -269,63 +294,63 @@ extension CommandLineParser: ParserStateMachineDelegate {
         case (.command, _):
             return .failure(argument.map { .unexpectedArgument($0) } ?? .unexpectedError)
             
-        case (.parsedSubcommand(_), .noMoreArguments):
+        case (.parsedSubcommand, .noMoreArguments):
             return .success(context)
-        case (.parsedSubcommand(_), .scannedSubcommand(let subcommand)):
+        case (.parsedSubcommand, .scannedSubcommand(let subcommand)):
             return .parsedSubcommand(subcommand)
-        case (.parsedSubcommand(_), .scannedFlag(let flag)):
+        case (.parsedSubcommand, .scannedFlag(let flag)):
             return .parsedFlag(flag)
-        case (.parsedSubcommand(_), .scannedOption(let option)):
+        case (.parsedSubcommand, .scannedOption(let option)):
             return .parsedOption(option)
-        case (.parsedSubcommand(_), .scannedInput(let input, let value)):
+        case (.parsedSubcommand, .scannedInput(let input, let value)):
             return .parsedInput(input, value)
-        case (.parsedSubcommand(_), .scannedInvalidFlagOrOption):
+        case (.parsedSubcommand, .scannedInvalidFlagOrOption):
             return .failure(argument.map { .invalidFlagOrOption($0) } ?? .unexpectedError)
-        case (.parsedSubcommand(_), .scannedHelpFlag(let subcommand)):
+        case (.parsedSubcommand, .scannedHelpFlag(let subcommand)):
             return .failure(.usageRequested(command, subcommand))
-        case (.parsedSubcommand(_), _):
+        case (.parsedSubcommand, _):
             return .failure(argument.map { .unexpectedArgument($0) } ?? .unexpectedError)
             
-        case (.parsedFlag(_), .noMoreArguments):
+        case (.parsedFlag, .noMoreArguments):
             return .success(context)
-        case (.parsedFlag(_), .scannedFlag(let flag)):
+        case (.parsedFlag, .scannedFlag(let flag)):
             return .parsedFlag(flag)
-        case (.parsedFlag(_), .scannedOption(let option)):
+        case (.parsedFlag, .scannedOption(let option)):
             return .parsedOption(option)
-        case (.parsedFlag(_), .scannedInput(let input, let value)):
+        case (.parsedFlag, .scannedInput(let input, let value)):
             return .parsedInput(input, value)
-        case (.parsedFlag(_), .scannedInvalidFlagOrOption):
+        case (.parsedFlag, .scannedInvalidFlagOrOption):
             return .failure(argument.map { .invalidFlagOrOption($0) } ?? .unexpectedError)
-        case (.parsedFlag(_), .scannedHelpFlag(let subcommand)):
+        case (.parsedFlag, .scannedHelpFlag(let subcommand)):
             return .failure(.usageRequested(command, subcommand))
-        case (.parsedFlag(_), _):
+        case (.parsedFlag, _):
             return .failure(argument.map { .unexpectedArgument($0) } ?? .unexpectedError)
             
-        case (.parsedOption(_), .scannedOptionValue(let option, let value)):
+        case (.parsedOption, .scannedOptionValue(let option, let value)):
             return .parsedOptionValue(option, value)
         case (.parsedOption(let option), _):
             return .failure(.missingOptionValue(option))
             
-        case (.parsedOptionValue(_), .noMoreArguments):
+        case (.parsedOptionValue, .noMoreArguments):
             return .success(context)
-        case (.parsedOptionValue(_), .scannedFlag(let flag)):
+        case (.parsedOptionValue, .scannedFlag(let flag)):
             return .parsedFlag(flag)
-        case (.parsedOptionValue(_), .scannedOption(let option)):
+        case (.parsedOptionValue, .scannedOption(let option)):
             return .parsedOption(option)
-        case (.parsedOptionValue(_), .scannedInput(let input, let value)):
+        case (.parsedOptionValue, .scannedInput(let input, let value)):
             return .parsedInput(input, value)
-        case (.parsedOptionValue(_), .scannedInvalidFlagOrOption):
+        case (.parsedOptionValue, .scannedInvalidFlagOrOption):
             return .failure(argument.map { .invalidFlagOrOption($0) } ?? .unexpectedError)
-        case (.parsedOptionValue(_), .scannedHelpFlag(let subcommand)):
+        case (.parsedOptionValue, .scannedHelpFlag(let subcommand)):
             return .failure(.usageRequested(command, subcommand))
-        case (.parsedOptionValue(_), _):
+        case (.parsedOptionValue, _):
             return .failure(argument.map { .unexpectedArgument($0) } ?? .unexpectedError)
             
-        case (.parsedInput(_), .noMoreArguments):
+        case (.parsedInput, .noMoreArguments):
             return .success(context)
-        case (.parsedInput(_), .scannedInput(let input, let value)):
+        case (.parsedInput, .scannedInput(let input, let value)):
             return .parsedInput(input, value)
-        case (.parsedInput(_), _):
+        case (.parsedInput, _):
             return .failure(argument.map { .unexpectedArgument($0) } ?? .unexpectedError)
             
         default:

@@ -23,7 +23,7 @@ public class CommandLineProcessor {
             throw CommandLineError.noSuchCommand(commandName)
         }
         
-        let parser = CommandLineParser(command: commandDefinition)
+        let parser = CommandLineParser(command: commandDefinition, allCommands: commands)
         let parsedCommand = try parser.parse(arguments)
         
         return parsedCommand
